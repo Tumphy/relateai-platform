@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   Home, 
   Users, 
@@ -16,8 +16,10 @@ import {
   X, 
   ChevronDown, 
   Search,
-  UserCircle
+  UserCircle,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 type NavItemProps = {
   href: string;
@@ -46,7 +48,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   const navItems = [
     { href: '/dashboard', icon: <Home size={20} />, label: 'Dashboard' },
@@ -55,6 +60,11 @@ export default function DashboardLayout({
     { href: '/dashboard/campaigns', icon: <MessageSquare size={20} />, label: 'Campaigns' },
     { href: '/dashboard/analytics', icon: <PieChart size={20} />, label: 'Analytics' },
   ];
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
   
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -104,13 +114,22 @@ export default function DashboardLayout({
           <div className="border-t border-neutral-200 p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-neutral-300"></div>
+                <div className="h-8 w-8 rounded-full bg-neutral-300 flex items-center justify-center text-neutral-600 font-semibold">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-neutral-700">John Smith</p>
-                <p className="text-xs text-neutral-500">Acme Inc.</p>
+                <p className="text-sm font-medium text-neutral-700">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-neutral-500">{user?.company}</p>
               </div>
             </div>
+            <button
+              className="mt-4 w-full flex items-center py-2 px-3 rounded-md text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+              onClick={handleLogout}
+            >
+              <LogOut size={18} className="mr-2" />
+              Sign out
+            </button>
           </div>
         </div>
       </div>
@@ -160,15 +179,51 @@ export default function DashboardLayout({
         <div className="border-t border-neutral-200 p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="h-8 w-8 rounded-full bg-neutral-300"></div>
+              <div className="h-8 w-8 rounded-full bg-neutral-300 flex items-center justify-center text-neutral-600 font-semibold">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </div>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-neutral-700">John Smith</p>
-              <p className="text-xs text-neutral-500">Acme Inc.</p>
+              <p className="text-sm font-medium text-neutral-700">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-neutral-500">{user?.company}</p>
             </div>
-            <button className="ml-auto text-neutral-500 hover:text-neutral-700">
-              <ChevronDown size={16} />
-            </button>
+            <div className="relative ml-auto">
+              <button 
+                className="text-neutral-500 hover:text-neutral-700"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              >
+                <ChevronDown size={16} />
+              </button>
+              
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-neutral-200">
+                  <Link
+                    href="/dashboard/profile"
+                    className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Your Profile
+                  </Link>
+                  <Link
+                    href="/dashboard/settings"
+                    className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    Settings
+                  </Link>
+                  <div className="border-t border-neutral-200 my-1"></div>
+                  <button
+                    className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -212,12 +267,44 @@ export default function DashboardLayout({
                 <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-primary-500 ring-2 ring-white" />
               </button>
               
-              <button
-                type="button"
-                className="flex items-center space-x-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 lg:hidden"
-              >
-                <UserCircle className="h-6 w-6" />
-              </button>
+              <div className="relative lg:hidden">
+                <button
+                  type="button"
+                  className="flex items-center space-x-2 text-sm font-medium text-neutral-700 hover:text-neutral-900"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                >
+                  <UserCircle className="h-6 w-6" />
+                </button>
+                
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-neutral-200">
+                    <Link
+                      href="/dashboard/profile"
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      Your Profile
+                    </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                    <div className="border-t border-neutral-200 my-1"></div>
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
