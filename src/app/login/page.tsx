@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -10,6 +13,9 @@ export default function LoginPage() {
     password: '',
     rememberMe: false,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { login } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -19,12 +25,20 @@ export default function LoginPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically authenticate the user
-    console.log('Login form submitted:', formData);
-    // Redirect to dashboard on successful login
-    window.location.href = '/dashboard';
+    setIsLoading(true);
+    
+    try {
+      await login(formData.email, formData.password);
+      toast.success('Login successful!');
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      toast.error('Invalid email or password. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -75,6 +89,7 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   className="input"
                   placeholder="you@company.com"
+                  disabled={isLoading}
                 />
               </div>
               
@@ -94,6 +109,7 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   className="input"
                   placeholder="••••••••"
+                  disabled={isLoading}
                 />
               </div>
               
@@ -106,6 +122,7 @@ export default function LoginPage() {
                     checked={formData.rememberMe}
                     onChange={handleInputChange}
                     className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                    disabled={isLoading}
                   />
                   <label htmlFor="rememberMe" className="ml-2 block text-sm text-neutral-700">
                     Remember me
@@ -118,8 +135,9 @@ export default function LoginPage() {
               <button
                 type="submit"
                 className="w-full btn-primary py-2.5"
+                disabled={isLoading}
               >
-                Log in
+                {isLoading ? 'Logging in...' : 'Log in'}
               </button>
             </div>
 
