@@ -1,21 +1,18 @@
 import { z } from 'zod';
 
-// Schema for creating a new message
-export const createMessageSchema = z.object({
+// Message creation schema
+export const messageCreateSchema = z.object({
   contactId: z.string().min(1, 'Contact ID is required'),
   accountId: z.string().min(1, 'Account ID is required'),
-  content: z.string().min(1, 'Message content is required'),
   subject: z.string().optional(),
+  content: z.string().min(1, 'Message content is required'),
   channel: z.enum(['email', 'linkedin', 'twitter', 'sms', 'other']),
-  status: z.enum(['draft', 'sent', 'delivered', 'opened', 'replied', 'bounced', 'failed']).default('draft'),
-  direction: z.enum(['outbound', 'inbound']).default('outbound'),
-  sentAt: z.date().or(z.string()).optional(),
   aiGenerated: z.boolean().default(false),
   aiPrompt: z.object({
-    recipientType: z.string(),
-    messageType: z.string(),
-    tone: z.string(),
-    length: z.string(),
+    recipientType: z.string().optional(),
+    messageType: z.string().optional(),
+    tone: z.string().optional(),
+    length: z.string().optional(),
     customInstructions: z.string().optional(),
   }).optional(),
   attachments: z.array(
@@ -32,15 +29,12 @@ export const createMessageSchema = z.object({
   campaignId: z.string().optional(),
 });
 
-// Schema for updating a message
-export const updateMessageSchema = z.object({
-  content: z.string().min(1, 'Message content is required').optional(),
+// Message update schema
+export const messageUpdateSchema = z.object({
   subject: z.string().optional(),
+  content: z.string().optional(),
+  channel: z.enum(['email', 'linkedin', 'twitter', 'sms', 'other']).optional(),
   status: z.enum(['draft', 'sent', 'delivered', 'opened', 'replied', 'bounced', 'failed']).optional(),
-  sentAt: z.date().or(z.string()).optional(),
-  deliveredAt: z.date().or(z.string()).optional(),
-  openedAt: z.date().or(z.string()).optional(),
-  repliedAt: z.date().or(z.string()).optional(),
   attachments: z.array(
     z.object({
       name: z.string(),
@@ -52,28 +46,13 @@ export const updateMessageSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
-// Schema for message filtering parameters
-export const messageFilterSchema = z.object({
-  contactId: z.string().optional(),
-  accountId: z.string().optional(),
-  status: z.enum(['draft', 'sent', 'delivered', 'opened', 'replied', 'bounced', 'failed']).optional(),
-  direction: z.enum(['outbound', 'inbound']).optional(),
-  channel: z.enum(['email', 'linkedin', 'twitter', 'sms', 'other']).optional(),
-  threadId: z.string().optional(),
-  search: z.string().optional(),
-  startDate: z.date().or(z.string()).optional(),
-  endDate: z.date().or(z.string()).optional(),
-  page: z.number().int().positive().optional().default(1),
-  limit: z.number().int().positive().optional().default(20),
-  sortBy: z.string().optional().default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
-  campaignId: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  aiGenerated: z.boolean().optional(),
+// Message send schema
+export const messageSendSchema = z.object({
+  messageId: z.string().min(1, 'Message ID is required'),
 });
 
-// Schema for generating a message with AI
-export const generateMessageSchema = z.object({
+// Message generation schema
+export const messageGenerationSchema = z.object({
   contactId: z.string().min(1, 'Contact ID is required'),
   accountId: z.string().min(1, 'Account ID is required'),
   recipientType: z.string().min(1, 'Recipient type is required'),
@@ -81,22 +60,31 @@ export const generateMessageSchema = z.object({
   tone: z.string().min(1, 'Tone is required'),
   length: z.string().min(1, 'Length is required'),
   customInstructions: z.string().optional(),
-  channel: z.enum(['email', 'linkedin', 'twitter', 'sms', 'other']).default('email'),
+  channel: z.enum(['email', 'linkedin', 'twitter', 'sms', 'other']).optional().default('email'),
   includeCTA: z.boolean().optional().default(true),
   personalize: z.boolean().optional().default(true),
 });
 
-// Schema for sending a message
-export const sendMessageSchema = z.object({
-  messageId: z.string().min(1, 'Message ID is required'),
-  scheduledFor: z.date().or(z.string()).optional(),
-});
+// Validator functions that return the validation result
+export const validateMessageCreate = (data: any) => {
+  return messageCreateSchema.safeParse(data);
+};
 
-// Export all schemas for use in routes
-export const messageValidators = {
-  create: createMessageSchema,
-  update: updateMessageSchema,
-  filter: messageFilterSchema,
-  generate: generateMessageSchema,
-  send: sendMessageSchema,
+export const validateMessageUpdate = (data: any) => {
+  return messageUpdateSchema.safeParse(data);
+};
+
+export const validateMessageSend = (data: any) => {
+  return messageSendSchema.safeParse(data);
+};
+
+export const validateMessageGeneration = (data: any) => {
+  return messageGenerationSchema.safeParse(data);
+};
+
+export default {
+  validateMessageCreate,
+  validateMessageUpdate,
+  validateMessageSend,
+  validateMessageGeneration
 };
