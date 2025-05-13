@@ -6,6 +6,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AccountProvider } from '@/contexts/AccountContext';
 import { MeddppiccProvider } from '@/contexts/MeddppiccContext';
+import { ContactProvider } from '@/contexts/ContactContext';
+import { MessageProvider } from '@/contexts/MessageContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import './globals.css';
 
@@ -23,11 +25,15 @@ export default function RootLayout({
         <AuthProvider>
           <AccountProvider>
             <MeddppiccProvider>
-              <ProtectedRoute>
-                {children}
-              </ProtectedRoute>
-              <Toaster position="top-right" />
-              <Analytics />
+              <ContactProvider>
+                <MessageProvider>
+                  <ProtectedRoute>
+                    {children}
+                  </ProtectedRoute>
+                  <Toaster position="top-right" />
+                  <Analytics />
+                </MessageProvider>
+              </ContactProvider>
             </MeddppiccProvider>
           </AccountProvider>
         </AuthProvider>
