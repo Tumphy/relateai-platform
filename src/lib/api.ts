@@ -1,4 +1,13 @@
 import axios from 'axios';
+import {
+  Contact,
+  ContactFilterParams,
+  Message,
+  MessageFilterParams,
+  MessageGenerationParams,
+  ContactDiscoveryParams,
+  PaginationResponse
+} from '../types/models';
 
 // Define API base URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -144,43 +153,101 @@ export const researchService = {
 
 // Contact services
 export const contactService = {
-  getContacts: async () => {
-    return api.get('/contacts');
+  getContacts: async (params?: ContactFilterParams) => {
+    return api.get<{ contacts: Contact[], pagination: any }>('/contacts', { params });
   },
   
   getContact: async (id: string) => {
-    return api.get(`/contacts/${id}`);
+    return api.get<Contact>(`/contacts/${id}`);
   },
   
-  createContact: async (contactData: any) => {
-    return api.post('/contacts', contactData);
+  createContact: async (contactData: Partial<Contact>) => {
+    return api.post<{ message: string, contact: Contact }>('/contacts', contactData);
   },
   
-  updateContact: async (id: string, contactData: any) => {
-    return api.put(`/contacts/${id}`, contactData);
+  updateContact: async (id: string, contactData: Partial<Contact>) => {
+    return api.put<{ message: string, contact: Contact }>(`/contacts/${id}`, contactData);
   },
   
   deleteContact: async (id: string) => {
-    return api.delete(`/contacts/${id}`);
+    return api.delete<{ message: string }>(`/contacts/${id}`);
+  },
+
+  discoverContacts: async (discoveryParams: ContactDiscoveryParams) => {
+    return api.post<{ message: string, status: string, requestId: string }>('/contacts/discover', discoveryParams);
+  },
+
+  getContactsByAccount: async (accountId: string, params?: Omit<ContactFilterParams, 'accountId'>) => {
+    return api.get<{ contacts: Contact[], pagination: any }>('/contacts', { 
+      params: { ...params, accountId } 
+    });
   }
 };
 
 // Message services
 export const messageService = {
-  getMessages: async () => {
-    return api.get('/messages');
+  getMessages: async (params?: MessageFilterParams) => {
+    return api.get<{ messages: Message[], pagination: any }>('/messages', { params });
+  },
+
+  getMessage: async (id: string) => {
+    return api.get<Message>(`/messages/${id}`);
+  },
+
+  createMessage: async (messageData: Partial<Message>) => {
+    return api.post<{ message: string, messageData: Message }>('/messages', messageData);
+  },
+
+  updateMessage: async (id: string, messageData: Partial<Message>) => {
+    return api.put<{ message: string, messageData: Message }>(`/messages/${id}`, messageData);
+  },
+
+  deleteMessage: async (id: string) => {
+    return api.delete<{ message: string }>(`/messages/${id}`);
   },
   
-  generateMessage: async (messageParams: any) => {
-    return api.post('/messages/generate', messageParams);
+  generateMessage: async (params: MessageGenerationParams) => {
+    return api.post<{ message: string, messageData: Message }>('/messages/generate', params);
   },
   
-  sendMessage: async (messageData: any) => {
-    return api.post('/messages/send', messageData);
+  sendMessage: async (messageId: string, scheduledFor?: Date) => {
+    return api.post<{ message: string, sentAt?: Date }>('/messages/send', { 
+      messageId, 
+      scheduledFor 
+    });
   },
   
-  getMessageHistory: async (contactId: string) => {
-    return api.get(`/messages/history/${contactId}`);
+  getMessageHistory: async (contactId: string, page?: number, limit?: number) => {
+    return api.get<{ 
+      contactId: string, 
+      contactName: string, 
+      threads: Array<{
+        threadId: string,
+        messages: Message[],
+        lastMessageDate: Date,
+        subject?: string
+      }>,
+      pagination: {
+        totalMessages: number,
+        totalPages: number,
+        currentPage: number,
+        limit: number
+      }
+    }>(`/messages/history/${contactId}`, { 
+      params: { page, limit } 
+    });
+  },
+
+  getMessagesByContact: async (contactId: string, params?: Omit<MessageFilterParams, 'contactId'>) => {
+    return api.get<{ messages: Message[], pagination: any }>('/messages', { 
+      params: { ...params, contactId } 
+    });
+  },
+
+  getMessagesByAccount: async (accountId: string, params?: Omit<MessageFilterParams, 'accountId'>) => {
+    return api.get<{ messages: Message[], pagination: any }>('/messages', { 
+      params: { ...params, accountId } 
+    });
   }
 };
 
