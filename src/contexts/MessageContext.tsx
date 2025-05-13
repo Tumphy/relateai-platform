@@ -1,379 +1,288 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Message, MessageFilterParams, MessageGenerationParams } from '../types/models';
-import { messageService } from '../lib/api';
-import { useAuth } from './AuthContext';
-import { toast } from 'react-hot-toast';
+'use client';
 
-interface MessageThreads {
-  threadId: string;
-  messages: Message[];
-  lastMessageDate: Date;
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { messageService } from '@/services/api';
+import { sendMessage as sendMessageUtil } from '@/lib/messageSender';
+import toast from 'react-hot-toast';
+
+interface Message {
+  _id: string;
+  userId: string;
+  contactId: string;
+  accountId: string;
+  content: string;
   subject?: string;
+  channel: 'email' | 'linkedin' | 'twitter' | 'sms' | 'other';
+  status: 'draft' | 'sent' | 'delivered' | 'opened' | 'replied' | 'bounced' | 'failed';
+  direction: 'outbound' | 'inbound';
+  sentAt?: string;
+  deliveredAt?: string;
+  openedAt?: string;
+  repliedAt?: string;
+  aiGenerated: boolean;
+  aiPrompt?: {
+    recipientType: string;
+    messageType: string;
+    tone: string;
+    length: string;
+    customInstructions?: string;
+  };
+  attachments?: {
+    name: string;
+    url: string;
+    type: string;
+    size: number;
+  }[];
+  threadId?: string;
+  parent?: string;
+  metadata?: Record<string, any>;
+  tags?: string[];
+  campaignId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface MessageContextType {
   messages: Message[];
-  selectedMessage: Message | null;
+  currentMessage: Message | null;
   loading: boolean;
   error: string | null;
-  totalMessages: number;
-  currentPage: number;
-  totalPages: number;
-  messageThreads: MessageThreads[];
-  getMessages: (params?: MessageFilterParams) => Promise<void>;
-  getMessagesByContact: (contactId: string, params?: Omit<MessageFilterParams, 'contactId'>) => Promise<void>;
-  getMessagesByAccount: (accountId: string, params?: Omit<MessageFilterParams, 'accountId'>) => Promise<void>;
+  fetchMessages: () => Promise<void>;
   getMessage: (id: string) => Promise<Message | null>;
-  createMessage: (messageData: Partial<Message>) => Promise<Message | null>;
-  updateMessage: (id: string, messageData: Partial<Message>) => Promise<Message | null>;
+  createMessage: (data: any) => Promise<Message | null>;
+  updateMessage: (id: string, data: any) => Promise<Message | null>;
   deleteMessage: (id: string) => Promise<boolean>;
-  selectMessage: (message: Message | null) => void;
-  generateMessage: (params: MessageGenerationParams) => Promise<Message | null>;
-  sendMessage: (messageId: string, scheduledFor?: Date) => Promise<boolean>;
-  getMessageHistory: (contactId: string, page?: number, limit?: number) => Promise<void>;
-  resetMessages: () => void;
+  sendMessage: (id: string) => Promise<boolean>;
+  generateMessage: (params: any) => Promise<Message | null>;
+  getMessageHistory: (contactId: string) => Promise<Message[]>;
 }
 
-const MessageContext = createContext<MessageContextType | undefined>(undefined);
+const MessageContext = createContext<MessageContextType>({
+  messages: [],
+  currentMessage: null,
+  loading: false,
+  error: null,
+  fetchMessages: async () => {},
+  getMessage: async () => null,
+  createMessage: async () => null,
+  updateMessage: async () => null,
+  deleteMessage: async () => false,
+  sendMessage: async () => false,
+  generateMessage: async () => null,
+  getMessageHistory: async () => []
+});
 
-export function MessageProvider({ children }: { children: ReactNode }) {
+export const MessageProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [currentMessage, setCurrentMessage] = useState<Message | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [totalMessages, setTotalMessages] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [messageThreads, setMessageThreads] = useState<MessageThreads[]>([]);
-  const { isAuthenticated } = useAuth();
 
-  // Reset state when auth changes
+  // Fetch messages on mount
   useEffect(() => {
-    if (!isAuthenticated) {
-      resetMessages();
-    }
-  }, [isAuthenticated]);
+    fetchMessages();
+  }, []);
 
-  const resetMessages = () => {
-    setMessages([]);
-    setSelectedMessage(null);
-    setTotalMessages(0);
-    setCurrentPage(1);
-    setTotalPages(1);
-    setMessageThreads([]);
-    setError(null);
-  };
-
-  const getMessages = async (params?: MessageFilterParams) => {
-    if (!isAuthenticated) return;
-
+  // Fetch all messages
+  const fetchMessages = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await messageService.getMessages(params);
+      const response = await messageService.getMessages();
       setMessages(response.data.messages);
-      
-      // Update pagination
-      const { totalMessages, totalPages, currentPage } = response.data.pagination;
-      setTotalMessages(totalMessages);
-      setTotalPages(totalPages);
-      setCurrentPage(currentPage);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch messages');
-      toast.error('Failed to fetch messages');
+    } catch (err) {
       console.error('Error fetching messages:', err);
+      setError('Failed to fetch messages');
+      toast.error('Failed to fetch messages');
     } finally {
       setLoading(false);
     }
   };
 
-  const getMessagesByContact = async (contactId: string, params?: Omit<MessageFilterParams, 'contactId'>) => {
-    if (!isAuthenticated || !contactId) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await messageService.getMessagesByContact(contactId, params);
-      setMessages(response.data.messages);
-      
-      // Update pagination
-      const { totalMessages, totalPages, currentPage } = response.data.pagination;
-      setTotalMessages(totalMessages);
-      setTotalPages(totalPages);
-      setCurrentPage(currentPage);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch messages for contact');
-      toast.error('Failed to fetch messages for this contact');
-      console.error('Error fetching messages for contact:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getMessagesByAccount = async (accountId: string, params?: Omit<MessageFilterParams, 'accountId'>) => {
-    if (!isAuthenticated || !accountId) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await messageService.getMessagesByAccount(accountId, params);
-      setMessages(response.data.messages);
-      
-      // Update pagination
-      const { totalMessages, totalPages, currentPage } = response.data.pagination;
-      setTotalMessages(totalMessages);
-      setTotalPages(totalPages);
-      setCurrentPage(currentPage);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch messages for account');
-      toast.error('Failed to fetch messages for this account');
-      console.error('Error fetching messages for account:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Get a single message by ID
   const getMessage = async (id: string): Promise<Message | null> => {
-    if (!isAuthenticated || !id) return null;
-
     setLoading(true);
     setError(null);
-
     try {
       const response = await messageService.getMessage(id);
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch message');
-      toast.error('Failed to fetch message details');
-      console.error('Error fetching message:', err);
+      setCurrentMessage(response.data.message);
+      return response.data.message;
+    } catch (err) {
+      console.error(`Error fetching message ${id}:`, err);
+      setError('Failed to fetch message');
+      toast.error('Failed to fetch message');
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  const createMessage = async (messageData: Partial<Message>): Promise<Message | null> => {
-    if (!isAuthenticated) return null;
-
+  // Create a new message
+  const createMessage = async (data: any): Promise<Message | null> => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await messageService.createMessage(messageData);
-      // Update local state
-      setMessages(prevMessages => [...prevMessages, response.data.messageData]);
-      setTotalMessages(prev => prev + 1);
+      const response = await messageService.createMessage(data);
+      // Add the new message to the state
+      setMessages([...messages, response.data.message]);
       toast.success('Message created successfully');
-      return response.data.messageData;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create message');
-      toast.error(err.response?.data?.message || 'Failed to create message');
+      return response.data.message;
+    } catch (err) {
       console.error('Error creating message:', err);
+      setError('Failed to create message');
+      toast.error('Failed to create message');
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  const updateMessage = async (id: string, messageData: Partial<Message>): Promise<Message | null> => {
-    if (!isAuthenticated || !id) return null;
-
+  // Update a message
+  const updateMessage = async (id: string, data: any): Promise<Message | null> => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await messageService.updateMessage(id, messageData);
-      
-      // Update local state
-      setMessages(prevMessages => 
-        prevMessages.map(message => 
-          message._id === id ? response.data.messageData : message
-        )
-      );
-      
-      // Update selected message if it's the one being edited
-      if (selectedMessage && selectedMessage._id === id) {
-        setSelectedMessage(response.data.messageData);
+      const response = await messageService.updateMessage(id, data);
+      // Update the message in the state
+      setMessages(messages.map(message => 
+        message._id === id ? response.data.message : message
+      ));
+      if (currentMessage?._id === id) {
+        setCurrentMessage(response.data.message);
       }
-      
       toast.success('Message updated successfully');
-      return response.data.messageData;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update message');
-      toast.error(err.response?.data?.message || 'Failed to update message');
-      console.error('Error updating message:', err);
+      return response.data.message;
+    } catch (err) {
+      console.error(`Error updating message ${id}:`, err);
+      setError('Failed to update message');
+      toast.error('Failed to update message');
       return null;
     } finally {
       setLoading(false);
     }
   };
 
+  // Delete a message
   const deleteMessage = async (id: string): Promise<boolean> => {
-    if (!isAuthenticated || !id) return false;
-
     setLoading(true);
     setError(null);
-
     try {
       await messageService.deleteMessage(id);
-      
-      // Update local state
-      setMessages(prevMessages => prevMessages.filter(message => message._id !== id));
-      setTotalMessages(prev => prev - 1);
-      
-      // Clear selected message if it's the one being deleted
-      if (selectedMessage && selectedMessage._id === id) {
-        setSelectedMessage(null);
+      // Remove the message from the state
+      setMessages(messages.filter(message => message._id !== id));
+      if (currentMessage?._id === id) {
+        setCurrentMessage(null);
       }
-      
       toast.success('Message deleted successfully');
       return true;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete message');
+    } catch (err) {
+      console.error(`Error deleting message ${id}:`, err);
+      setError('Failed to delete message');
       toast.error('Failed to delete message');
-      console.error('Error deleting message:', err);
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const selectMessage = (message: Message | null) => {
-    setSelectedMessage(message);
-  };
-
-  const generateMessage = async (params: MessageGenerationParams): Promise<Message | null> => {
-    if (!isAuthenticated) return null;
-
+  // Send a message
+  const sendMessage = async (id: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await messageService.generateMessage(params);
-      // Add the new message to the list
-      setMessages(prevMessages => [...prevMessages, response.data.messageData]);
-      toast.success('Message generated successfully');
-      return response.data.messageData;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to generate message');
-      toast.error('Failed to generate message');
-      console.error('Error generating message:', err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sendMessage = async (messageId: string, scheduledFor?: Date): Promise<boolean> => {
-    if (!isAuthenticated || !messageId) return false;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await messageService.sendMessage(messageId, scheduledFor);
+      const result = await sendMessageUtil(id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
       
-      // Update message status in local state
-      setMessages(prevMessages => 
-        prevMessages.map(message => {
-          if (message._id === messageId) {
-            return {
-              ...message,
-              status: 'sent',
-              sentAt: response.data.sentAt || new Date()
-            };
-          }
-          return message;
-        })
+      // Update the message status in the state
+      const updatedMessages = messages.map(message => 
+        message._id === id ? { 
+          ...message, 
+          status: 'sent', 
+          sentAt: new Date().toISOString() 
+        } : message
       );
       
-      // Update selected message if it's the one being sent
-      if (selectedMessage && selectedMessage._id === messageId) {
-        setSelectedMessage({
-          ...selectedMessage,
+      setMessages(updatedMessages);
+      
+      if (currentMessage?._id === id) {
+        setCurrentMessage({
+          ...currentMessage,
           status: 'sent',
-          sentAt: response.data.sentAt || new Date()
+          sentAt: new Date().toISOString()
         });
       }
       
-      if (scheduledFor) {
-        toast.success('Message scheduled successfully');
-      } else {
-        toast.success('Message sent successfully');
-      }
-      
+      toast.success('Message sent successfully');
       return true;
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send message');
-      toast.error('Failed to send message');
-      console.error('Error sending message:', err);
+    } catch (err) {
+      console.error(`Error sending message ${id}:`, err);
+      setError('Failed to send message');
+      toast.error(typeof err === 'string' ? err : 'Failed to send message');
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const getMessageHistory = async (contactId: string, page = 1, limit = 20) => {
-    if (!isAuthenticated || !contactId) return;
-
+  // Generate a message using AI
+  const generateMessage = async (params: any): Promise<Message | null> => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await messageService.getMessageHistory(contactId, page, limit);
-      setMessageThreads(response.data.threads);
-      
-      // Update pagination
-      const { totalMessages, totalPages, currentPage } = response.data.pagination;
-      setTotalMessages(totalMessages);
-      setTotalPages(totalPages);
-      setCurrentPage(currentPage);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch message history');
-      toast.error('Failed to fetch message history');
-      console.error('Error fetching message history:', err);
+      const response = await messageService.generateMessage(params);
+      // Add the new message to the state
+      setMessages([...messages, response.data.message]);
+      toast.success('Message generated successfully');
+      return response.data.message;
+    } catch (err) {
+      console.error('Error generating message:', err);
+      setError('Failed to generate message');
+      toast.error('Failed to generate message');
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  const value = {
-    messages,
-    selectedMessage,
-    loading,
-    error,
-    totalMessages,
-    currentPage,
-    totalPages,
-    messageThreads,
-    getMessages,
-    getMessagesByContact,
-    getMessagesByAccount,
-    getMessage,
-    createMessage,
-    updateMessage,
-    deleteMessage,
-    selectMessage,
-    generateMessage,
-    sendMessage,
-    getMessageHistory,
-    resetMessages
+  // Get message history for a contact
+  const getMessageHistory = async (contactId: string): Promise<Message[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await messageService.getMessageHistory(contactId);
+      return response.data.messages;
+    } catch (err) {
+      console.error(`Error fetching message history for contact ${contactId}:`, err);
+      setError('Failed to fetch message history');
+      toast.error('Failed to fetch message history');
+      return [];
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <MessageContext.Provider value={value}>
+    <MessageContext.Provider
+      value={{
+        messages,
+        currentMessage,
+        loading,
+        error,
+        fetchMessages,
+        getMessage,
+        createMessage,
+        updateMessage,
+        deleteMessage,
+        sendMessage,
+        generateMessage,
+        getMessageHistory
+      }}
+    >
       {children}
     </MessageContext.Provider>
   );
-}
+};
 
-export function useMessages() {
-  const context = useContext(MessageContext);
-  if (context === undefined) {
-    throw new Error('useMessages must be used within a MessageProvider');
-  }
-  return context;
-}
+export const useMessages = () => useContext(MessageContext);
