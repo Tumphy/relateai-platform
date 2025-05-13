@@ -1,264 +1,172 @@
-# RelateAI Server API
+# RelateAI Platform - Backend Server
 
-This is the backend API for the RelateAI platform, providing authentication, data management, and AI-powered features.
+This directory contains the backend server for the RelateAI platform, a sales and outreach solution powered by AI.
 
-## API Overview
+## Overview
 
-The RelateAI API includes the following resources:
+The backend provides RESTful APIs for:
+- User authentication and management
+- Account and contact management
+- Message creation, generation, and delivery
+- MEDDPPICC sales qualification framework
+- AI-powered research and personalization
 
-- **Authentication**: User registration, login, and token management
-- **Accounts**: Target account management with AI research
-- **MEDDPPICC**: Deal qualification framework management
-- **Contacts**: Prospect contact management
-- **Messages**: Message generation and management
-- **Research**: AI-powered company and contact research
+## Tech Stack
 
-## API Endpoints
+- **Node.js** and **Express**: Core server framework
+- **TypeScript**: Type-safe JavaScript
+- **MongoDB** with **Mongoose**: Database and ORM
+- **OpenAI API**: AI models for text generation
+- **Nodemailer**: Email sending capabilities
+- **JWT**: Authentication
+- **Zod**: Schema validation
 
-### Authentication
+## Project Structure
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/register` | POST | Register a new user |
-| `/api/auth/login` | POST | Login and get auth token |
-| `/api/auth/me` | GET | Get current user info |
-
-### Accounts
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/accounts` | GET | Get all accounts |
-| `/api/accounts/:id` | GET | Get account by ID |
-| `/api/accounts` | POST | Create a new account |
-| `/api/accounts/:id` | PUT | Update an account |
-| `/api/accounts/:id` | DELETE | Delete an account |
-
-### MEDDPPICC
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/meddppicc/:accountId` | GET | Get MEDDPPICC assessment for an account |
-| `/api/meddppicc/:accountId` | POST | Create MEDDPPICC assessment |
-| `/api/meddppicc/:accountId` | PUT | Update MEDDPPICC assessment |
-| `/api/meddppicc/:accountId` | DELETE | Delete MEDDPPICC assessment |
-| `/api/meddppicc/:accountId/next-steps` | POST | Add next step |
-| `/api/meddppicc/:accountId/next-steps/:stepIndex` | PUT | Update next step |
-
-### Contacts
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/contacts` | GET | Get all contacts |
-| `/api/contacts/:id` | GET | Get contact by ID |
-| `/api/contacts` | POST | Create a new contact |
-| `/api/contacts/:id` | PUT | Update a contact |
-| `/api/contacts/:id` | DELETE | Delete a contact |
-
-### Messages
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/messages` | GET | Get all messages |
-| `/api/messages/generate` | POST | Generate a message using AI |
-| `/api/messages/send` | POST | Send a message |
-| `/api/messages/history/:contactId` | GET | Get message history with a contact |
-
-### Research
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/research/account` | POST | Research company and generate account data |
-| `/api/research/meddppicc/:accountId` | POST | Generate MEDDPPICC assessment |
-| `/api/research/icp/:accountId` | POST | Calculate ICP score |
-
-## Data Models
-
-### User
-
-```typescript
-{
-  _id: string;
-  email: string;
-  password: string; // Hashed
-  firstName: string;
-  lastName: string;
-  company: string;
-  role: 'user' | 'admin';
-  isVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
 ```
-
-### Account
-
-```typescript
-{
-  _id: string;
-  name: string;
-  website: string;
-  industry: string;
-  description: string;
-  size: string;
-  location: string;
-  revenue: string;
-  technologies: string[];
-  tags: string[];
-  icpScore: number;
-  status: string;
-  notes: string;
-  owner: ObjectId; // Reference to User
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
-
-### MEDDPPICC
-
-```typescript
-{
-  _id: string;
-  account: ObjectId; // Reference to Account
-  metrics: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  economicBuyer: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  decisionCriteria: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  decisionProcess: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  paperProcess: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  identifiedPain: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  champion: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  competition: {
-    score: number;
-    notes: string;
-    confidence: 'low' | 'medium' | 'high';
-  };
-  overallScore: number;
-  dealHealth: string;
-  nextSteps: Array<{
-    text: string;
-    completed: boolean;
-    dueDate: Date;
-  }>;
-  dealNotes: string;
-  lastUpdatedBy: ObjectId; // Reference to User
-  createdAt: Date;
-  updatedAt: Date;
-}
+src/
+├── controllers/      # Request handlers
+│   ├── auth.ts       # Authentication controllers
+│   ├── account.ts    # Account management
+│   ├── contact.ts    # Contact management
+│   ├── message.ts    # Message management
+│   ├── email.ts      # Email functionality
+│   ├── meddppicc.ts  # MEDDPPICC framework
+│   └── research.ts   # AI research capabilities
+├── middleware/       # Express middleware
+│   ├── auth.ts       # JWT authentication
+│   ├── errorHandler.ts # Error handling
+│   └── validation.ts   # Request validation
+├── models/           # Mongoose schemas
+│   ├── user.ts       # User model
+│   ├── account.ts    # Account model
+│   ├── contact.ts    # Contact model
+│   ├── message.ts    # Message model
+│   └── meddppicc.ts  # MEDDPPICC model
+├── routes/           # API routes
+│   ├── auth.ts       # Auth routes
+│   ├── accounts.ts   # Account routes
+│   ├── contacts.ts   # Contact routes
+│   ├── messages.ts   # Message routes
+│   ├── meddppicc.ts  # MEDDPPICC routes
+│   └── research.ts   # AI research routes
+├── validators/       # Zod validation schemas
+│   ├── auth.ts       # Auth validation
+│   ├── account.ts    # Account validation
+│   ├── contact.ts    # Contact validation
+│   ├── message.ts    # Message validation
+│   └── meddppicc.ts  # MEDDPPICC validation
+├── utils/            # Utility functions
+│   ├── ai.ts         # AI-related utilities
+│   ├── email.ts      # Email utilities
+│   └── helpers.ts    # General helpers
+└── index.ts          # Server entry point
 ```
 
 ## Setup
 
-### Prerequisites
-
-- Node.js 18+
-- MongoDB instance
-- OpenAI API key
-
-### Environment Variables
-
-Create a `.env` file in the server directory with the following:
-
-```
-# Server Configuration
-PORT=5000
-NODE_ENV=development
-
-# Database Configuration
-MONGODB_URI=mongodb://localhost:27017/relateai
-REDIS_URL=redis://localhost:6379
-
-# Authentication
-JWT_SECRET=your_secret_key_here
-JWT_EXPIRES_IN=7d
-
-# API Keys
-OPENAI_API_KEY=your_openai_api_key_here
-LINKEDIN_API_KEY=your_linkedin_api_key_here
-GMAIL_API_KEY=your_gmail_api_key_here
-
-# Feature Flags
-ENABLE_ACCOUNT_RESEARCH=true
-ENABLE_CONTACT_DISCOVERY=true
-ENABLE_AI_MESSAGING=true
-```
-
-### Installation
-
+1. Install dependencies:
 ```bash
-# Install dependencies
 npm install
+```
 
-# Build TypeScript
-npm run build
+2. Create a `.env` file with the following variables:
+```
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/relateai
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRY=24h
+OPENAI_API_KEY=your_openai_api_key
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@example.com
+EMAIL_PASSWORD=your_email_password
+EMAIL_FROM=no-reply@example.com
+EMAIL_WEBHOOK_SECRET=your_webhook_secret
+```
 
-# Start server
-npm start
-
-# Start in development mode
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-## Authentication
-
-The API uses JWT-based authentication. Include the token in the `x-auth-token` header:
-
-```
-x-auth-token: your.jwt.token
+4. For production:
+```bash
+npm run build
+npm start
 ```
 
-## Error Handling
+## API Endpoints
 
-The API returns standard HTTP status codes:
+### Authentication
+- `POST /api/auth/register`: Register a new user
+- `POST /api/auth/login`: Log in and get JWT token
+- `GET /api/auth/me`: Get current user info
 
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `404` - Not Found
-- `500` - Server Error
+### Accounts
+- `GET /api/accounts`: Get all accounts
+- `GET /api/accounts/:id`: Get account by ID
+- `POST /api/accounts`: Create a new account
+- `PUT /api/accounts/:id`: Update an account
+- `DELETE /api/accounts/:id`: Delete an account
 
-Error responses include a message:
+### Contacts
+- `GET /api/contacts`: Get all contacts
+- `GET /api/contacts/:id`: Get contact by ID
+- `POST /api/contacts`: Create a new contact
+- `PUT /api/contacts/:id`: Update a contact
+- `DELETE /api/contacts/:id`: Delete a contact
+- `POST /api/contacts/discover`: AI-powered contact discovery
 
-```json
-{
-  "message": "Error message description"
-}
+### Messages
+- `GET /api/messages`: Get all messages
+- `GET /api/messages/:id`: Get message by ID
+- `POST /api/messages`: Create a new message
+- `PUT /api/messages/:id`: Update a message
+- `DELETE /api/messages/:id`: Delete a message
+- `POST /api/messages/generate`: Generate a message using AI
+- `POST /api/messages/send`: Send a message
+- `GET /api/messages/track/:id/:event`: Track message opens/delivery
+- `POST /api/messages/webhook`: Process email replies
+- `GET /api/messages/history/:contactId`: Get message history with a contact
+
+### MEDDPPICC
+- `GET /api/meddppicc/:accountId`: Get MEDDPPICC for an account
+- `POST /api/meddppicc/:accountId`: Create MEDDPPICC assessment
+- `PUT /api/meddppicc/:accountId`: Update MEDDPPICC assessment
+- `DELETE /api/meddppicc/:accountId`: Delete MEDDPPICC assessment
+- `POST /api/meddppicc/:accountId/next-steps`: Add next step
+- `PUT /api/meddppicc/:accountId/next-steps/:index`: Update next step
+
+### Research
+- `POST /api/research/account`: Research account using AI
+- `POST /api/research/meddppicc/:accountId`: Generate MEDDPPICC using AI
+- `POST /api/research/icp/:accountId`: Calculate ICP score
+
+## Testing
+
+```bash
+npm test
 ```
 
-## Rate Limiting
+## Deployment
 
-API requests are limited to 100 requests per minute per IP address.
+This server can be deployed to any Node.js hosting platform:
+- Heroku
+- DigitalOcean
+- AWS Elastic Beanstalk
+- Google Cloud Run
+- Vercel
 
-## Future Improvements
+## Webhook Setup
 
-- WebSocket support for real-time updates
-- GraphQL API
-- OAuth integration for LinkedIn and Gmail
-- Webhooks for integration with external services
+For processing email replies, set up a webhook endpoint at:
+```
+POST /api/messages/webhook
+```
+
+This endpoint should be accessible from the internet and configured with your email provider.
+
+## License
+
+Proprietary - All rights reserved
