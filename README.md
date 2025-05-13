@@ -26,6 +26,7 @@ The platform is built using a modern tech stack:
 - **Database**: MongoDB with Mongoose
 - **AI Integration**: OpenAI API (Claude & GPT-4o)
 - **Authentication**: JWT-based auth system
+- **Email Integration**: Nodemailer with tracking and webhooks
 
 ## Project Structure
 
@@ -37,22 +38,24 @@ src/
 │   ├── dashboard/        # Dashboard pages
 │   │   ├── accounts/     # Account management
 │   │   ├── contacts/     # Contact management
-│   │   └── campaigns/    # Campaign management
+│   │   └── messages/     # Message management
 │   ├── login/            # Authentication pages
 │   └── signup/           # User registration
 ├── components/           # Shared UI components
 ├── contexts/             # React context providers
-├── lib/                  # Utility functions and API client
-├── models/               # TypeScript type definitions
+├── lib/                  # Utility functions 
+├── services/             # API services
+├── types/                # TypeScript type definitions
 └── styles/               # Global styles and Tailwind config
 
 server/
 ├── src/
 │   ├── models/           # Database models
 │   ├── routes/           # API routes
+│   ├── controllers/      # Route handlers
 │   ├── middleware/       # Express middleware
-│   ├── services/         # Business logic
-│   └── validators/       # Input validation
+│   ├── validators/       # Input validation
+│   └── utils/            # Utility functions
 ├── .env                  # Environment variables
 └── package.json          # Dependencies
 ```
@@ -63,6 +66,7 @@ server/
 - Node.js 18+
 - MongoDB
 - OpenAI API key
+- SMTP server for email functionality
 
 ### Installation
 
@@ -87,6 +91,25 @@ npm install
    - Create `.env.local` in the root directory for frontend
    - Create `.env` in the `server` directory for backend
 
+   #### Backend Environment Variables
+   ```
+   PORT=5000
+   MONGODB_URI=mongodb://localhost:27017/relateai
+   JWT_SECRET=your_jwt_secret
+   OPENAI_API_KEY=your_openai_api_key
+   EMAIL_HOST=smtp.example.com
+   EMAIL_PORT=587
+   EMAIL_USER=your_email@example.com
+   EMAIL_PASSWORD=your_email_password
+   EMAIL_FROM=no-reply@example.com
+   EMAIL_WEBHOOK_SECRET=your_webhook_secret
+   ```
+
+   #### Frontend Environment Variables
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:5000/api
+   ```
+
 5. Start the development servers:
 ```bash
 # In the root directory (frontend)
@@ -96,49 +119,45 @@ npm run dev
 npm run dev
 ```
 
-## User Workflow
+## Current Features
 
-1. **Onboarding & Setup**
-   - User signs up and configures their ICP and persona preferences
-   - Connects LinkedIn and Gmail integrations
-   - Optional CRM sync
+### Account Management
+- Create, view, edit, and delete accounts
+- AI-powered account research
+- MEDDPPICC framework integration
+- Account scoring and prioritization
 
-2. **Target Account Creation & Research**
-   - Add companies manually or via CSV upload
-   - AI automatically researches and builds company profiles
-   - MEDDPPICC analysis is generated
+### Contact Management
+- Comprehensive contact profiles
+- Contact filtering and search
+- ICP fit scoring
+- Activity tracking
 
-3. **Contact Discovery & Persona Mapping**
-   - AI matches roles to names at target companies
-   - Profiles are enriched with recent activity and intent signals
-   - Contacts are scored based on ICP fit
-
-4. **Message Crafting & Sequencing**
-   - AI generates personalized outreach based on contact data
-   - Users can create multi-channel sequences with conditional logic
-   - Messages are graded for effectiveness
-
-5. **Engagement & Deal Progression**
-   - Platform tracks replies and engagement
-   - AI suggests follow-ups based on context
-   - Deal stages are tracked in a visual pipeline
+### Messaging
+- Multi-channel messaging (email, LinkedIn, etc.)
+- AI-generated personalized messages
+- Email sending with tracking
+- Message threading and history
 
 ## Feature Roadmap
 
-### Phase 1: Core Platform (Current)
+### Phase 1: Core Platform (Completed)
 - User authentication and dashboard
 - Account research and MEDDPPICC framework
 - Basic messaging capabilities
+- Email integration
 
-### Phase 2: Advanced Features (Upcoming)
-- LinkedIn and Gmail integrations
-- AI-powered response generation
-- Campaign analytics and optimization
+### Phase 2: Advanced Features (In Progress)
+- LinkedIn integration
+- Campaign sequencing
+- Advanced analytics
+- Team collaboration
 
 ### Phase 3: Enterprise Features (Future)
-- Team collaboration
 - CRM integrations
-- Advanced reporting and analytics
+- Advanced reporting
+- Custom workflows
+- Enterprise SSO
 
 ## Contributing
 
@@ -148,10 +167,16 @@ npm run dev
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
+Current focus areas for contribution:
+- LinkedIn integration
+- Campaign management system
+- Test coverage
+- UI/UX improvements
+
 ## License
 
 Proprietary - All rights reserved
 
 ## Contact
 
-For questions about the project, contact [support@relateai.com](mailto:support@relateai.com).
+For questions about the project, contact [support@relateai.com](mailto:support@relateai.com)
