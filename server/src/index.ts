@@ -4,12 +4,15 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import fs from 'fs';
+import path from 'path';
 import routes from './routes';
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { csrfProtection, getCSRFToken } from './middleware/csrf';
 import { generalApiRateLimit } from './middleware/rate-limit';
+import logger, { requestLogger } from './utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +20,13 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 const port = process.env.PORT || 5000;
+const environment = process.env.NODE_ENV || 'development';
+
+// Create logs directory if it doesn't exist
+const logDir = process.env.LOG_DIR || 'logs';
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir);
+}
 
 // Security middleware
 app.use(helmet()); // Set security headers
@@ -32,11 +42,14 @@ app.use(express.json({ limit: '1mb' })); // Limit request size
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser()); // Parse cookies for CSRF
 
+// Add request logging
+app.use(requestLogger);
+
 // Apply rate limiting to all API routes
 app.use('/api', generalApiRateLimit);
 
 // Apply CSRF protection in production
-if (process.env.NODE_ENV === 'production') {
+if (environment === 'production') {
   app.use(csrfProtection());
   app.get('/api/csrf-token', getCSRFToken);
 }
@@ -49,9 +62,9 @@ const connectDB = async () => {
     
     // Connect to database
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/relateai');
-    console.log('MongoDB connected successfully');
+    logger.info('MongoDB connected successfully');
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error', { error });
     process.exit(1);
   }
 };
@@ -66,7 +79,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
     message: 'RelateAI API is running',
-    environment: process.env.NODE_ENV || 'development',
+    environment,
     timestamp: new Date().toISOString()
   });
 });
@@ -79,16 +92,28 @@ app.use(errorHandler);
 
 // Graceful shutdown handling
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
+  logger.info('SIGTERM received, shutting down gracefully');
   mongoose.connection.close(false, () => {
-    console.log('MongoDB connection closed');
+    logger.info('MongoDB connection closed');
     process.exit(0);
   });
 });
 
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception', { error });
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled promise rejection', { reason, promise });
+  process.exit(1);
+});
+
 // Start server
 app.listen(port, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${port}`);
+  logger.info(`Server running in ${environment} mode on port ${port}`);
 });
 
 export default app;
