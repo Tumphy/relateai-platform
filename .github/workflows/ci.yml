@@ -1,0 +1,107 @@
+name: RelateAI CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install Frontend Dependencies
+      run: npm ci
+      
+    - name: Run Frontend Tests
+      run: npm test
+      
+    - name: Upload Frontend Test Coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-coverage
+        path: coverage/
+        
+  backend-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+        mongodb-version: [5.0]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './server/package.json'
+    
+    - name: Install Backend Dependencies
+      run: cd server && npm ci
+      
+    - name: Run Backend Tests
+      run: cd server && npm test
+      
+    - name: Upload Backend Test Coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-coverage
+        path: server/coverage/
+        
+  build:
+    runs-on: ubuntu-latest
+    needs: [frontend-test, backend-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install Frontend Dependencies
+      run: npm ci
+      
+    - name: Build Frontend
+      run: npm run build
+      
+    - name: Install Backend Dependencies
+      run: cd server && npm ci
+      
+    - name: Build Backend
+      run: cd server && npm run build
+      
+    - name: Upload Frontend Build
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: .next/
+        
+    - name: Upload Backend Build
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-build
+        path: server/dist/
