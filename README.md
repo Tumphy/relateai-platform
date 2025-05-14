@@ -20,6 +20,7 @@ The platform is built using a modern tech stack:
 - **UI**: Tailwind CSS with custom components
 - **State Management**: Context API and Zustand
 - **API Client**: Axios
+- **Testing**: Jest and React Testing Library
 
 ### Backend
 - **API**: Node.js with Express
@@ -27,6 +28,7 @@ The platform is built using a modern tech stack:
 - **AI Integration**: OpenAI API (Claude & GPT-4o)
 - **Authentication**: JWT-based auth system
 - **Email Integration**: Nodemailer with tracking and webhooks
+- **Testing**: Jest and Supertest with MongoDB Memory Server
 
 ## Project Structure
 
@@ -42,10 +44,13 @@ src/
 │   ├── login/            # Authentication pages
 │   └── signup/           # User registration
 ├── components/           # Shared UI components
+│   ├── __tests__/        # Component tests
 ├── contexts/             # React context providers
 ├── lib/                  # Utility functions 
 ├── services/             # API services
 ├── types/                # TypeScript type definitions
+├── utils/                # Helper utilities
+│   ├── test-utils.tsx    # Testing utilities
 └── styles/               # Global styles and Tailwind config
 
 server/
@@ -53,10 +58,12 @@ server/
 │   ├── models/           # Database models
 │   ├── routes/           # API routes
 │   ├── controllers/      # Route handlers
+│   │   ├── __tests__/    # Controller tests
 │   ├── middleware/       # Express middleware
 │   ├── validators/       # Input validation
 │   └── utils/            # Utility functions
 ├── .env                  # Environment variables
+├── jest.config.json      # Jest configuration
 └── package.json          # Dependencies
 ```
 
@@ -119,6 +126,26 @@ npm run dev
 npm run dev
 ```
 
+### Running Tests
+
+The project includes comprehensive testing for both frontend and backend:
+
+1. Run frontend tests:
+```bash
+# In the root directory
+npm test                 # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run tests with coverage report
+```
+
+2. Run backend tests:
+```bash
+# In the server directory
+npm test                 # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run tests with coverage report
+```
+
 ## Current Features
 
 ### Account Management
@@ -138,6 +165,31 @@ npm run dev
 - AI-generated personalized messages
 - Email sending with tracking
 - Message threading and history
+
+## Production Readiness
+
+To ensure the platform is production-ready, we have implemented:
+
+1. **Comprehensive Testing**:
+   - Unit tests for critical components
+   - Integration tests for API endpoints
+   - End-to-end tests for critical flows
+
+2. **Error Handling & Monitoring**:
+   - Proper error handling across frontend and backend
+   - Detailed logging for debugging
+   - Custom error messages for better user experience
+
+3. **Security Enhancements**:
+   - Input validation on all forms
+   - JWT authentication with secure practices
+   - CSRF protection for API endpoints
+   - Secure email handling
+
+4. **Performance Optimization**:
+   - Optimized database queries
+   - Lazy loading of components
+   - Efficient state management
 
 ## Feature Roadmap
 
