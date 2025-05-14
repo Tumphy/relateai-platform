@@ -13,6 +13,7 @@ import { csrfProtection, getCSRFToken } from './middleware/csrf';
 import { generalApiRateLimit } from './middleware/rate-limit';
 import logger, { requestLogger } from './utils/logger';
 import database from './utils/database';
+import cache from './utils/cache';
 
 // Load environment variables
 dotenv.config();
@@ -63,6 +64,10 @@ const initializeServer = async () => {
     // Initialize database indexes
     await database.initializeDb();
     
+    // Log cache status
+    const cacheEnabled = cache.isEnabled();
+    logger.info(`Redis cache ${cacheEnabled ? 'enabled' : 'disabled'}`);
+    
     // Start server after successful database connection
     app.listen(port, () => {
       logger.info(`Server running in ${environment} mode on port ${port}`);
@@ -81,10 +86,16 @@ app.get('/health', async (req, res) => {
   // Check database connection
   const dbStatus = await database.checkDbHealth();
   
+  // Check cache status
+  const cacheStatus = cache.isEnabled();
+  
   res.status(dbStatus ? 200 : 503).json({ 
     status: dbStatus ? 'ok' : 'degraded', 
     message: dbStatus ? 'RelateAI API is running' : 'Database connection issues',
-    database: dbStatus ? 'connected' : 'disconnected',
+    services: {
+      database: dbStatus ? 'connected' : 'disconnected',
+      cache: cacheStatus ? 'enabled' : 'disabled'
+    },
     environment,
     timestamp: new Date().toISOString()
   });
@@ -100,6 +111,10 @@ app.use(errorHandler);
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
   
+  // Close cache connection
+  await cache.close();
+  logger.info('Redis connection closed');
+  
   // Close database connection
   await database.disconnectDb();
   logger.info('MongoDB connection closed');
@@ -112,8 +127,11 @@ process.on('SIGTERM', async () => {
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught exception', { error });
   
-  // Attempt to disconnect database before exiting
-  database.disconnectDb()
+  // Attempt to disconnect services before exiting
+  Promise.all([
+    cache.close().catch(() => {}),
+    database.disconnectDb().catch(() => {})
+  ])
     .then(() => process.exit(1))
     .catch(() => process.exit(1));
 });
@@ -122,8 +140,11 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled promise rejection', { reason, promise });
   
-  // Attempt to disconnect database before exiting
-  database.disconnectDb()
+  // Attempt to disconnect services before exiting
+  Promise.all([
+    cache.close().catch(() => {}),
+    database.disconnectDb().catch(() => {})
+  ])
     .then(() => process.exit(1))
     .catch(() => process.exit(1));
 });
