@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
 
 interface AppError extends Error {
   statusCode?: number;
@@ -15,11 +16,21 @@ export const errorHandler = (
   res: Response, 
   next: NextFunction
 ) => {
-  console.error('Error:', err);
-  
   // Default error status and message
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
+  
+  // Log the error with details
+  logger.error(`Error: ${message}`, {
+    error: err.name,
+    message: err.message,
+    statusCode,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    ip: req.ip,
+    details: err.details || {}
+  });
   
   // Specific error handling for known error types
   if (err.name === 'ValidationError') {
@@ -75,6 +86,12 @@ export const errorHandler = (
  * Middleware to handle 404 Not Found errors
  */
 export const notFoundHandler = (req: Request, res: Response) => {
+  logger.warn(`Route not found: ${req.method} ${req.originalUrl}`, {
+    method: req.method,
+    path: req.originalUrl,
+    ip: req.ip
+  });
+  
   return res.status(404).json({
     success: false,
     message: 'Not Found',
