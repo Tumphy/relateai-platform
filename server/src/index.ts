@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import fs from 'fs';
@@ -13,6 +12,7 @@ import { errorHandler, notFoundHandler } from './middleware/error';
 import { csrfProtection, getCSRFToken } from './middleware/csrf';
 import { generalApiRateLimit } from './middleware/rate-limit';
 import logger, { requestLogger } from './utils/logger';
+import database from './utils/database';
 
 // Load environment variables
 dotenv.config();
@@ -54,31 +54,37 @@ if (environment === 'production') {
   app.get('/api/csrf-token', getCSRFToken);
 }
 
-// Connect to MongoDB
-const connectDB = async () => {
+// Connect to MongoDB and initialize
+const initializeServer = async () => {
   try {
-    // Set mongoose options
-    mongoose.set('strictQuery', true);
-    
     // Connect to database
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/relateai');
-    logger.info('MongoDB connected successfully');
+    await database.connectDb();
+    
+    // Initialize database indexes
+    await database.initializeDb();
+    
+    // Start server after successful database connection
+    app.listen(port, () => {
+      logger.info(`Server running in ${environment} mode on port ${port}`);
+    });
   } catch (error) {
-    logger.error('MongoDB connection error', { error });
+    logger.error('Failed to initialize server', { error });
     process.exit(1);
   }
 };
 
-connectDB();
-
 // API Routes
 app.use('/api', routes);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    message: 'RelateAI API is running',
+// Enhanced health check endpoint
+app.get('/health', async (req, res) => {
+  // Check database connection
+  const dbStatus = await database.checkDbHealth();
+  
+  res.status(dbStatus ? 200 : 503).json({ 
+    status: dbStatus ? 'ok' : 'degraded', 
+    message: dbStatus ? 'RelateAI API is running' : 'Database connection issues',
+    database: dbStatus ? 'connected' : 'disconnected',
     environment,
     timestamp: new Date().toISOString()
   });
@@ -91,29 +97,41 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Graceful shutdown handling
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  mongoose.connection.close(false, () => {
-    logger.info('MongoDB connection closed');
-    process.exit(0);
-  });
+  
+  // Close database connection
+  await database.disconnectDb();
+  logger.info('MongoDB connection closed');
+  
+  // Exit process
+  process.exit(0);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught exception', { error });
-  process.exit(1);
+  
+  // Attempt to disconnect database before exiting
+  database.disconnectDb()
+    .then(() => process.exit(1))
+    .catch(() => process.exit(1));
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled promise rejection', { reason, promise });
-  process.exit(1);
+  
+  // Attempt to disconnect database before exiting
+  database.disconnectDb()
+    .then(() => process.exit(1))
+    .catch(() => process.exit(1));
 });
 
-// Start server
-app.listen(port, () => {
-  logger.info(`Server running in ${environment} mode on port ${port}`);
+// Initialize server
+initializeServer().catch(error => {
+  logger.error('Server initialization failed', { error });
+  process.exit(1);
 });
 
 export default app;
