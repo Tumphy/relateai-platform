@@ -6,7 +6,8 @@ import {
   MessageFilterParams,
   MessageGenerationParams,
   ContactDiscoveryParams,
-  PaginationResponse
+  PaginationResponse,
+  EmailTemplate
 } from '../types/models';
 
 // Define API base URL
@@ -251,11 +252,69 @@ export const messageService = {
   }
 };
 
+// Email services
+export const emailService = {
+  sendTestEmail: async (to: string, subject: string, content: string) => {
+    return api.post<{ success: boolean, message: string, messageId?: string }>('/email/test', {
+      to,
+      subject,
+      content
+    });
+  },
+
+  sendEmail: async (data: {
+    to: string;
+    subject: string;
+    content: string;
+    templateId?: string;
+    from?: string;
+    replyTo?: string;
+    contactId?: string;
+    accountId?: string;
+    messageId?: string;
+  }) => {
+    return api.post<{ success: boolean, message: string, messageId?: string }>('/messages/email/send', data);
+  },
+
+  getEmailTemplates: async () => {
+    return api.get<{ templates: EmailTemplate[] }>('/messages/templates');
+  },
+
+  getEmailTemplate: async (id: string) => {
+    return api.get<{ template: EmailTemplate }>(`/messages/templates/${id}`);
+  },
+
+  createEmailTemplate: async (templateData: Partial<EmailTemplate>) => {
+    return api.post<{ message: string, template: EmailTemplate }>('/messages/templates', templateData);
+  },
+
+  updateEmailTemplate: async (id: string, templateData: Partial<EmailTemplate>) => {
+    return api.put<{ message: string, template: EmailTemplate }>(`/messages/templates/${id}`, templateData);
+  },
+
+  deleteEmailTemplate: async (id: string) => {
+    return api.delete<{ message: string }>(`/messages/templates/${id}`);
+  },
+
+  getMessageTrackingStats: async (messageId: string) => {
+    return api.get<{
+      opens: number,
+      clicks: number,
+      replies: number,
+      lastOpened?: Date,
+      lastClicked?: Date,
+      lastReplied?: Date,
+      clickedLinks?: Array<{ url: string, timestamp: Date }>
+    }>(`/messages/${messageId}/tracking`);
+  }
+};
+
 export default {
   auth: authService,
   accounts: accountService,
   meddppicc: meddppiccService,
   research: researchService,
   contacts: contactService,
-  messages: messageService
+  messages: messageService,
+  email: emailService
 };
