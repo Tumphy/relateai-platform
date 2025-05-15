@@ -5,6 +5,7 @@ import contactRoutes from './contacts';
 import messageRoutes from './messages';
 import researchRoutes from './research';
 import emailRoutes from './email';
+import emailTemplateRoutes from './emailTemplates';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/contacts', contactRoutes);
 router.use('/messages', messageRoutes);
 router.use('/research', researchRoutes);
 router.use('/email', emailRoutes);
+router.use('/email-templates', emailTemplateRoutes);
 
 export default router;
