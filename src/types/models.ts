@@ -92,7 +92,20 @@ export interface Message {
   }[];
   threadId?: string;
   parent?: ID;
-  metadata?: Record<string, any>;
+  metadata?: {
+    opens?: number;
+    clicks?: number;
+    replies?: number;
+    lastOpened?: Date;
+    lastClicked?: Date;
+    lastReplied?: Date;
+    clickedLinks?: Array<{ url: string; timestamp: Date }>;
+    receivedAt?: Date;
+    originalRecipient?: string;
+    fromEmail?: string;
+    headers?: Record<string, string>;
+    trackingId?: string;
+  };
   tags?: string[];
   campaignId?: ID;
   createdAt: Date;
@@ -120,6 +133,24 @@ export interface Meddppicc {
   lastUpdatedBy: ID;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Email Template interface
+export interface EmailTemplate {
+  _id: ID;
+  name: string;
+  description?: string;
+  subject: string;
+  content: string;
+  category: 'introduction' | 'follow-up' | 'meeting' | 'proposal' | 'custom';
+  html: string;
+  plainText: string;
+  variables?: string[];
+  userId: ID;
+  createdAt: Date;
+  updatedAt: Date;
+  isDefault?: boolean;
+  tags?: string[];
 }
 
 // Contact filter parameters
@@ -168,6 +199,7 @@ export interface MessageGenerationParams {
   channel?: 'email' | 'linkedin' | 'twitter' | 'sms' | 'other';
   includeCTA?: boolean;
   personalize?: boolean;
+  templateId?: string;
 }
 
 // Contact Discovery Parameters
@@ -187,4 +219,15 @@ export interface PaginationResponse<T> {
     currentPage: number;
     limit: number;
   };
+}
+
+// Email Tracking Stats
+export interface EmailTrackingStats {
+  opens: number;
+  clicks: number;
+  replies: number;
+  lastOpened?: Date;
+  lastClicked?: Date;
+  lastReplied?: Date;
+  clickedLinks?: Array<{ url: string; timestamp: Date }>;
 }
