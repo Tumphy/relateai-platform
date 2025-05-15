@@ -46,6 +46,7 @@ src/
 ├── components/           # Shared UI components
 │   ├── __tests__/        # Component tests
 ├── contexts/             # React context providers
+│   ├── __tests__/        # Context tests
 ├── lib/                  # Utility functions 
 ├── services/             # API services
 ├── types/                # TypeScript type definitions
@@ -57,13 +58,15 @@ server/
 ├── src/
 │   ├── models/           # Database models
 │   ├── routes/           # API routes
+│   │   ├── __tests__/    # Route tests
 │   ├── controllers/      # Route handlers
 │   │   ├── __tests__/    # Controller tests
 │   ├── middleware/       # Express middleware
+│   ├── services/         # Business logic services
 │   ├── validators/       # Input validation
-│   └── utils/            # Utility functions
+│   └── utils/            # Helper utilities
 ├── .env                  # Environment variables
-├── jest.config.json      # Jest configuration
+├── jest.config.js        # Jest configuration
 └── package.json          # Dependencies
 ```
 
@@ -110,6 +113,7 @@ npm install
    EMAIL_PASSWORD=your_email_password
    EMAIL_FROM=no-reply@example.com
    EMAIL_WEBHOOK_SECRET=your_webhook_secret
+   EMAIL_TRACKING_DOMAIN=tracking.relateai.com
    ```
 
    #### Frontend Environment Variables
@@ -166,6 +170,13 @@ npm run test:coverage    # Run tests with coverage report
 - Email sending with tracking
 - Message threading and history
 
+### Email Integration (New)
+- Email sending with Nodemailer
+- Open and click tracking
+- Reply detection and threading
+- Email templating system
+- Email analytics
+
 ## Production Readiness
 
 To ensure the platform is production-ready, we have implemented:
@@ -174,22 +185,33 @@ To ensure the platform is production-ready, we have implemented:
    - Unit tests for critical components
    - Integration tests for API endpoints
    - End-to-end tests for critical flows
+   - Jest configuration for both frontend and backend
+   - Test utilities for common testing scenarios
 
 2. **Error Handling & Monitoring**:
    - Proper error handling across frontend and backend
    - Detailed logging for debugging
    - Custom error messages for better user experience
+   - Consistent error response format
 
 3. **Security Enhancements**:
    - Input validation on all forms
    - JWT authentication with secure practices
    - CSRF protection for API endpoints
-   - Secure email handling
+   - Secure email handling with webhook verification
+   - HMAC signing for tracking IDs
 
 4. **Performance Optimization**:
    - Optimized database queries
    - Lazy loading of components
    - Efficient state management
+   - Email tracking pixel optimization
+
+5. **CI/CD Pipeline**:
+   - GitHub Actions workflow for CI/CD
+   - Automated testing on pull requests
+   - Linting checks
+   - Build verification
 
 ## Feature Roadmap
 
@@ -197,19 +219,43 @@ To ensure the platform is production-ready, we have implemented:
 - User authentication and dashboard
 - Account research and MEDDPPICC framework
 - Basic messaging capabilities
-- Email integration
+- Email integration with tracking
 
 ### Phase 2: Advanced Features (In Progress)
 - LinkedIn integration
 - Campaign sequencing
 - Advanced analytics
 - Team collaboration
+- Email templates and campaigns
 
 ### Phase 3: Enterprise Features (Future)
 - CRM integrations
 - Advanced reporting
 - Custom workflows
 - Enterprise SSO
+
+## Development Progress
+
+### Completed
+- Core platform functionality
+- Basic account and contact management
+- Messaging system
+- Email integration with tracking
+- Testing infrastructure setup
+- CI/CD pipeline configuration
+
+### In Progress
+- Enhancing test coverage
+- LinkedIn integration
+- Campaign management system
+- Email templates and analytics
+- Advanced engagement tracking
+
+### Upcoming
+- Team collaboration features
+- CRM integrations
+- Advanced analytics dashboard
+- Custom workflow engine
 
 ## Contributing
 
