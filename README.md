@@ -40,15 +40,25 @@ src/
 │   ├── dashboard/        # Dashboard pages
 │   │   ├── accounts/     # Account management
 │   │   ├── contacts/     # Contact management
-│   │   └── messages/     # Message management
+│   │   ├── messages/     # Message management
+│   │   └── email-templates/ # Email template management
 │   ├── login/            # Authentication pages
 │   └── signup/           # User registration
 ├── components/           # Shared UI components
+│   ├── accounts/         # Account components
+│   ├── contacts/         # Contact components
+│   ├── messages/         # Message components
+│   │   ├── EmailTestForm.tsx        # Email test form
+│   │   ├── EmailTemplateForm.tsx    # Email template form
+│   │   ├── EmailTemplateList.tsx    # Email template list
+│   │   ├── TemplateSelectModal.tsx  # Template selection modal
+│   │   └── TemplatePreview.tsx      # Template preview
 │   ├── __tests__/        # Component tests
 ├── contexts/             # React context providers
 │   ├── __tests__/        # Context tests
 ├── lib/                  # Utility functions 
 ├── services/             # API services
+│   └── emailTemplate.service.ts  # Email template service
 ├── types/                # TypeScript type definitions
 ├── utils/                # Helper utilities
 │   ├── test-utils.tsx    # Testing utilities
@@ -57,12 +67,18 @@ src/
 server/
 ├── src/
 │   ├── models/           # Database models
+│   │   └── emailTemplate.ts   # Email template model
 │   ├── routes/           # API routes
-│   │   ├── __tests__/    # Route tests
+│   │   ├── email.ts           # Email routes
+│   │   ├── emailTemplates.ts  # Email template routes
+│   │   ├── __tests__/         # Route tests
 │   ├── controllers/      # Route handlers
-│   │   ├── __tests__/    # Controller tests
+│   │   ├── email.controller.ts        # Email controller
+│   │   ├── emailTemplate.controller.ts # Email template controller
+│   │   ├── __tests__/         # Controller tests
 │   ├── middleware/       # Express middleware
 │   ├── services/         # Business logic services
+│   │   └── email.service.ts   # Email service
 │   ├── validators/       # Input validation
 │   └── utils/            # Helper utilities
 ├── .env                  # Environment variables
@@ -170,12 +186,20 @@ npm run test:coverage    # Run tests with coverage report
 - Email sending with tracking
 - Message threading and history
 
-### Email Integration (New)
+### Email Integration
 - Email sending with Nodemailer
-- Open and click tracking
+- Open and click tracking via tracking pixels
+- Link tracking with redirects
 - Reply detection and threading
-- Email templating system
 - Email analytics
+
+### Email Templates
+- Create and manage reusable email templates
+- Template categories (introduction, follow-up, etc.)
+- Variable substitution for personalization
+- HTML and plain text email support
+- Template preview functionality
+- Default templates by category
 
 ## Production Readiness
 
@@ -220,13 +244,13 @@ To ensure the platform is production-ready, we have implemented:
 - Account research and MEDDPPICC framework
 - Basic messaging capabilities
 - Email integration with tracking
+- Email template system
 
 ### Phase 2: Advanced Features (In Progress)
 - LinkedIn integration
 - Campaign sequencing
 - Advanced analytics
 - Team collaboration
-- Email templates and campaigns
 
 ### Phase 3: Enterprise Features (Future)
 - CRM integrations
@@ -243,6 +267,7 @@ To ensure the platform is production-ready, we have implemented:
 - Email integration with tracking
 - Testing infrastructure setup
 - CI/CD pipeline configuration
+- Email templates management system
 
 ### In Progress
 - Enhancing test coverage
