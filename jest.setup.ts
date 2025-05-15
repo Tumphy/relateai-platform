@@ -1,22 +1,18 @@
 import '@testing-library/jest-dom';
-import { TextEncoder, TextDecoder } from 'util';
-import { MockedFunction } from 'jest-mock';
 
-// Add necessary globals for tests
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder as any;
-
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-  length: 0,
-  key: jest.fn()
-};
-
-global.localStorage = localStorageMock as any;
+// Mock Next.js router
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  })),
+  usePathname: jest.fn(() => '/'),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
+}));
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -30,23 +26,29 @@ Object.defineProperty(window, 'matchMedia', {
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
-  }))
+  })),
 });
+
+// Mock ResizeObserver
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
 
 // Mock IntersectionObserver
 global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
-  root: null,
-  rootMargin: '',
-  thresholds: []
 }));
 
-// Mock fetch
-global.fetch = jest.fn() as MockedFunction<typeof fetch>;
-
-// Clean up after each test
-afterEach(() => {
-  jest.clearAllMocks();
-});
+// Mock for fetch
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve({}),
+    ok: true,
+    status: 200,
+    text: () => Promise.resolve(''),
+  })
+);
