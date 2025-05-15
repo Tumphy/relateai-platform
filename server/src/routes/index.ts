@@ -4,6 +4,7 @@ import accountRoutes from './accounts';
 import contactRoutes from './contacts';
 import messageRoutes from './messages';
 import researchRoutes from './research';
+import emailRoutes from './email';
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/accounts', accountRoutes);
 router.use('/contacts', contactRoutes);
 router.use('/messages', messageRoutes);
 router.use('/research', researchRoutes);
+router.use('/email', emailRoutes);
 
 export default router;
